@@ -1,0 +1,69 @@
+services:
+  transmission:
+    container_name: transmission
+    image: lscr.io/linuxserver/transmission:latest
+    domainname: ${DOMAIN_NAME}
+    restart: unless-stopped
+
+    networks:
+      - proxy
+
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - USER=${USERNAME}
+      - PASS=${PASSWORD}
+
+    volumes:
+      - ./config:/config
+      - /media/:/downloads
+      - /media/complete/:/downloads/complete
+      - /media/incomplete/:/downloads/incomplete
+      - /media/1-Watch:/watch
+
+      - /media/Films/:/downloads/Films
+      - /media/Series/:/downloads/Series
+      - /media/Music/:/downloads/Music
+      - /media/Autres/:/downloads/Autres
+
+    ports:
+      - 9091:9091
+      - 51413:51413
+      - 51413:51413/udp
+
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+
+      ## HTTP Routers
+      - "traefik.http.routers.transmission-secure.entrypoints=websecure"
+      - "traefik.http.routers.transmission-secure.rule=Host(`$DOMAIN_NAME`)"
+        #      - "traefik.http.routers.jellyfin-secure.service=jellyfin"
+      - "traefik.http.routers.transmission-secure.tls.certresolver=letsencrypt"
+        #      - "traefik.http.routers.jellyfin-secure.middlewares=secureHeaders@file"
+
+      ## Middlewares
+      - "traefik.http.middlewares.custom.headers.sslredirect=true"
+
+      ## HTTP Services
+      - "traefik.http.services.transmission-secure.loadbalancer.server.port=9091"
+
+
+        #      - "traefik.http.middlewares.custom.headers.browserXSSFilter=true"
+        #      - "traefik.http.middlewares.custom.headers.contentTypeNosniff=true"
+        #      - "traefik.http.middlewares.custom.headers.forceSTSHeader=true"
+        #      - "traefik.http.middlewares.custom.headers.frameDeny=true"
+        #      - "traefik.http.middlewares.custom.headers.sslredirect=true"
+        #      - "traefik.http.middlewares.custom.headers.stsIncludeSubdomains=true"
+        #      - "traefik.http.middlewares.custom.headers.stsPreload=true"
+        #      - "traefik.http.middlewares.custom.headers.stsSeconds=315360000"
+        #      - "traefik.http.routers.airsonic-adv-secure.entrypoints=websecure"
+        #      - "traefik.http.routers.airsonic-adv-secure.rule=Host(`${DOMAIN_NAME}`)"
+        #      - "traefik.http.routers.airsonic-adv.tls.certresolver=letsencrypt"
+        #      - "traefik.http.services.airsonic-adv.loadbalancer.server.port=4040"
+
+networks:
+  proxy:
+    name: proxy
+    external: true
